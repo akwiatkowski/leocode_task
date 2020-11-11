@@ -2,6 +2,36 @@ require "bigdecimal"
 
 require "prices"
 
+class CartElement
+  def initialize(product)
+    @product = product
+    @cart_price = @product.price
+  end
+
+  attr_reader :cart_price
+
+  # different name of writer should reduce bugs
+  def update_cart_price(new_cart_price)
+    @cart_price = new_cart_price
+  end
+
+  # XXX would be nice to use active support delegate
+  # https://blog.lelonek.me/how-to-delegate-methods-in-ruby-a7a71b077d99
+  # delegate :price, :name, :code, to: :product
+
+  def price
+    @product.price
+  end
+
+  def name
+    @product.name
+  end
+
+  def code
+    @product.code
+  end
+end
+
 class Checkout
   def initialize(promotional_rules)
     @promotional_rules = promotional_rules
@@ -10,13 +40,10 @@ class Checkout
 
   def scan(item_code)
     # XXX maybe move this to private method
-    selected_item = Prices.list.select { |item| item[:code] == item_code }.first
+    selected_item = Prices.list.select { |item| item.code == item_code }.first
 
     if selected_item
-      # not sure about ruby referencing object
-      item = selected_item.dup
-      # copy original price to be changed by promotions
-      item[:cart_price] = item[:price]
+      item = CartElement.new(selected_item)
       @cart << item
     end
   end
@@ -38,7 +65,7 @@ class Checkout
   private
 
   def cart_total_price
-    @cart.map { |item| BigDecimal(item[:cart_price]) }.sum
+    @cart.map { |item| BigDecimal(item.cart_price) }.sum
   end
 
   def total_promotion_for_price(price)
@@ -49,12 +76,12 @@ class Checkout
   end
 
   def updte_product_price_for_quantity
-    product_names_in_cart = @cart.map{|item| item[:name]}.uniq
+    product_names_in_cart = @cart.map{|item| item.name}.uniq
 
     # this hash is not used but I feel this could be used soon
     product_quantities = {}
     product_names_in_cart.each do |name|
-      product_quantities[name] = @cart.select{|item| item[:name] == name}.size
+      product_quantities[name] = @cart.select{|item| item.name == name}.size
 
       selected_promotions = @promotional_rules.select { |rule|
         rule[:quantity_equal_or_over] &&
@@ -70,9 +97,9 @@ class Checkout
         @cart.select do |item|
           # XXX it would be better to convert to Struct/Class
           # if will secure wrong Hash key error
-          item[:name] == name
+          item.name == name
         end.each do |item|
-          item[:cart_price] = best_promotion[:new_price]
+          item.update_cart_price(best_promotion[:new_price])
         end
       end
     end
