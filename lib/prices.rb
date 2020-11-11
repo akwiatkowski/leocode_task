@@ -5,17 +5,17 @@ class Prices
       {
         code: "001",
         name: "Red Scarf",
-        price: "9.25" # will be converted to BigDecimal
+        price: BigDecimal("9.25")
       },
       {
         code: "002",
         name: "Silver cufflinks",
-        price: "45.00" # will be converted to BigDecimal
+        price: BigDecimal("45.00")
       },
       {
         code: "003",
         name: "Silk Dress",
-        price: "19.95" # will be converted to BigDecimal
+        price: BigDecimal("19.95")
       }
     ]
 
