@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 RSpec.describe Checkout do
-  # TODO better structurize tests
+  # TODO: better structurize tests
   it "calculates total price - 1 product" do
     co = Checkout.new(promotional_rules)
     co.scan("001")

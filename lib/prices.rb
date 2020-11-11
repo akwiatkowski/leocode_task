@@ -1,10 +1,11 @@
+# frozen_string_literal: true
+
 # XXX struct works better in Crystal
 Product = Struct.new(:code, :name, :price)
 
 class Prices
   def self.list
-
-    return [
+    [
       Product.new(
         "001",
         "Red Scarf",
@@ -19,8 +20,7 @@ class Prices
         "003",
         "Silk Dress",
         BigDecimal("19.95")
-      ),
+      )
     ]
-
   end
 end

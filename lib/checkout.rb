@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "bigdecimal"
 
 require "prices"
@@ -54,12 +56,10 @@ class Checkout
     price = cart_total_price
 
     total_promotion = total_promotion_for_price(price)
-    if total_promotion
-      price -= (price * 0.01 * total_promotion[:reduction_percent]).round(2, :down)
-    end
+    price -= (price * 0.01 * total_promotion[:reduction_percent]).round(2, :down) if total_promotion
 
     # https://ruby-doc.org/stdlib-2.7.1/libdoc/bigdecimal/rdoc/BigDecimal.html
-    return convert_currency(price)
+    convert_currency(price)
   end
 
   private
@@ -69,43 +69,42 @@ class Checkout
   end
 
   def total_promotion_for_price(price)
-    selected_promotions = @promotional_rules.select {|rule| rule[:spend_over] && (rule[:spend_over] <= price)}
+    selected_promotions = @promotional_rules.select { |rule| rule[:spend_over] && (rule[:spend_over] <= price) }
     # highest price reduction
-    best_promotion = selected_promotions.sort {|a,b| a[:reduction_percent] <=> b[:reduction_percent] }.last
-    return best_promotion
+    selected_promotions.max { |a, b| a[:reduction_percent] <=> b[:reduction_percent] }
   end
 
   def updte_product_price_for_quantity
-    product_names_in_cart = @cart.map{|item| item.name}.uniq
+    product_names_in_cart = @cart.map(&:name).uniq
 
     # this hash is not used but I feel this could be used soon
     product_quantities = {}
     product_names_in_cart.each do |name|
-      product_quantities[name] = @cart.select{|item| item.name == name}.size
+      product_quantities[name] = @cart.select { |item| item.name == name }.size
 
-      selected_promotions = @promotional_rules.select { |rule|
+      selected_promotions = @promotional_rules.select do |rule|
         rule[:quantity_equal_or_over] &&
-        rule[:new_price] &&
-        rule[:quantity_equal_or_over] <= product_quantities[name] &&
-        rule[:product_name] == name
-      }
+          rule[:new_price] &&
+          rule[:quantity_equal_or_over] <= product_quantities[name] &&
+          rule[:product_name] == name
+      end
       # lowest price
-      best_promotion = selected_promotions.sort {|a,b| a[:new_price] <=> b[:new_price] }.first
+      best_promotion = selected_promotions.min { |a, b| a[:new_price] <=> b[:new_price] }
 
-      if best_promotion
-        # update cart_price
-        @cart.select do |item|
-          # XXX it would be better to convert to Struct/Class
-          # if will secure wrong Hash key error
-          item.name == name
-        end.each do |item|
-          item.update_cart_price(best_promotion[:new_price])
-        end
+      next unless best_promotion
+
+      # update cart_price
+      @cart.select do |item|
+        # XXX it would be better to convert to Struct/Class
+        # if will secure wrong Hash key error
+        item.name == name
+      end.each do |item|
+        item.update_cart_price(best_promotion[:new_price])
       end
     end
   end
 
   def convert_currency(price)
-    sprintf("£%.2f", price.truncate(2))
+    format("£%.2f", price.truncate(2))
   end
 end
