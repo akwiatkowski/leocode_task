@@ -9,7 +9,6 @@ require "models/promotion_quantity"
 
 require "prices"
 
-
 class Checkout
   def initialize(promotional_rules)
     @promotional_rules = promotional_rules

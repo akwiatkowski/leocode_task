@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CartElement
   def initialize(product)
     @product = product
